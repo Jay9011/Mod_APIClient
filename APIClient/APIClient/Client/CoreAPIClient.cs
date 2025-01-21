@@ -66,14 +66,20 @@ namespace APIClient.Client
             try
             {
                 var connectionInfo = _apiSetup.GetConnectionInfo();
-                var httpRequest = _requestSerializer.SerializeRequest(request, connectionInfo.BaseUrl);
-                
+
                 using (var cts = new CancellationTokenSource(request.TimeoutMilliseconds))
                 {
                     using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, request.CancellationToken))
                     {
                         var response = await _retryPolicy.ExecuteAsync(
-                            async () => await _httpClient.SendAsync(httpRequest, linkedCts.Token));
+                            async () =>
+                            {
+                                using (var httpRequest = _requestSerializer.SerializeRequest(request, connectionInfo.BaseUrl))
+                                {
+                                    return await _httpClient.SendAsync(httpRequest, linkedCts.Token);
+                                }
+                            },
+                            linkedCts.Token);
 
                         return await _responseDeserializer.DeserializeResponse<T>(response);
                     }
