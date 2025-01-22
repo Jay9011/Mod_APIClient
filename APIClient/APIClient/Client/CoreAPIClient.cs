@@ -59,7 +59,7 @@ namespace APIClient.Client
             return SendAsync<T>(request);
         }
 
-        public async Task<APIResponse<T>> SendAsync<T>(APIRequest request)
+        public async Task<APIResponse<T>> SendAsync<T>(IAPIRequest request)
         {
             CheckDisposed();
 
@@ -114,7 +114,7 @@ namespace APIClient.Client
             GC.SuppressFinalize(this);
         }
 
-        private APIRequest CreateRequest(string endpointName, HttpMethod method, IAPIRequest apiRequest)
+        private IAPIRequest CreateRequest(string endpointName, HttpMethod method, IAPIRequest apiRequest)
         {
             CheckDisposed();
 

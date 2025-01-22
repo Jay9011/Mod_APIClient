@@ -29,6 +29,6 @@ namespace APIClient.Client.Interfaces
         /// <summary>
         /// 일반 HTTP 요청
         /// </summary>
-        Task<APIResponse<T>> SendAsync<T>(APIRequest request);
+        Task<APIResponse<T>> SendAsync<T>(IAPIRequest request);
     }
 }
