@@ -47,6 +47,22 @@ var apiSetup = new APISetup(ioHelper, "API_NAME");
 ICoreAPI api = new CoreAPIClient(apiSetup); // 설정을 통해 원하는 Endpoint로 API를 호출하는 API 클라이언트 생성
 ```
 
+### SSL 인증서 검증 무시 옵션
+
+자체 서명된 인증서나 유효하지 않은 인증서를 사용하는 서버에 연결할 때 SSL 인증서 검증을 무시할 수 있습니다.
+
+```csharp
+// SSL 인증서 검증을 무시하는 API 클라이언트 생성
+ICoreAPI api = new CoreAPIClient(apiSetup, ignoreSslErrors: true);
+
+// LoggingHandler와 함께 사용할 때
+var handler = new LoggingHandler(ignoreSslErrors: true);
+var httpClient = new HttpClient(handler);
+ICoreAPI api = new CoreAPIClient(apiSetup, httpClient: httpClient);
+```
+
+> **주의**: 이 옵션은 개발 환경이나 테스트 목적으로만 사용하는 것이 좋습니다. 프로덕션 환경에서는 보안 위험이 있을 수 있습니다.
+
 ### 3. API 요청 생성
 ```csharp
 IAPIRequest request = new APIRequest

@@ -7,10 +7,20 @@ namespace APIClient.Extentions
 {
     public class LoggingHandler : DelegatingHandler
     {
-        public LoggingHandler(HttpMessageHandler innerHandler = null)
-            : base(innerHandler ?? new HttpClientHandler())
+        public LoggingHandler(HttpMessageHandler innerHandler = null, bool ignoreSslErrors = false)
+            : base(innerHandler ?? CreateHandler(ignoreSslErrors))
         {
             
+        }
+
+        private static HttpClientHandler CreateHandler(bool ignoreSslErrors)
+        {
+            var handler = new HttpClientHandler();
+            if (ignoreSslErrors)
+            {
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+            }
+            return handler;
         }
         
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

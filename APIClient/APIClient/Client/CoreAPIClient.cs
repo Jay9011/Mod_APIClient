@@ -9,6 +9,7 @@ using APIClient.Models;
 using APIClient.Models.Interfaces;
 using APIClient.Serialization;
 using APIClient.Serialization.Interfaces;
+using System.Net;
 
 namespace APIClient.Client
 {
@@ -26,10 +27,31 @@ namespace APIClient.Client
             IAPIRequestSerializer requestSerializer = null, 
             IAPIResponseDeserializer responseDeserializer = null,
             HttpClient httpClient = null, 
-            IRetryPolicy retryPolicy = null)
+            IRetryPolicy retryPolicy = null,
+            bool ignoreSslErrors = false)
         {
             _apiSetup = apiSetup ?? throw new ArgumentNullException(nameof(apiSetup));
-            _httpClient = httpClient ?? new HttpClient();
+            
+            if (httpClient == null)
+            {
+                if (ignoreSslErrors)
+                {
+                    var handler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+                    };
+                    _httpClient = new HttpClient(handler);
+                }
+                else
+                {
+                    _httpClient = new HttpClient();
+                }
+            }
+            else
+            {
+                _httpClient = httpClient;
+            }
+            
             _requestSerializer = requestSerializer ?? new APIRequestSerializer();
             _responseDeserializer = responseDeserializer ?? new APIResponseDeserializer();
             _retryPolicy = retryPolicy ?? RetryPolicy.Default;
