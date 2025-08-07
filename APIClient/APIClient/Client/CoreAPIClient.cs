@@ -1,15 +1,16 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using APIClient.Client.Interfaces;
+﻿using APIClient.Client.Interfaces;
 using APIClient.Client.Retry;
+using APIClient.Configuration;
 using APIClient.Configuration.Interfaces;
 using APIClient.Models;
 using APIClient.Models.Interfaces;
 using APIClient.Serialization;
 using APIClient.Serialization.Interfaces;
+using System;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace APIClient.Client
 {
@@ -23,14 +24,17 @@ namespace APIClient.Client
         private bool _disposed;
 
         public CoreAPIClient(
-            IAPISetup apiSetup,  
+            IAPISetup apiSetup = null,  
             IAPIRequestSerializer requestSerializer = null, 
             IAPIResponseDeserializer responseDeserializer = null,
             HttpClient httpClient = null, 
             IRetryPolicy retryPolicy = null,
             bool ignoreSslErrors = false)
         {
-            _apiSetup = apiSetup ?? throw new ArgumentNullException(nameof(apiSetup));
+            if (apiSetup != null)
+            {
+                _apiSetup = apiSetup;
+            }
             
             if (httpClient == null)
             {
@@ -57,37 +61,42 @@ namespace APIClient.Client
             _retryPolicy = retryPolicy ?? RetryPolicy.Default;
         }
 
-        public Task<APIResponse<T>> GetAsync<T>(string endpointName, IAPIRequest parameters = null)
+        public Task<APIResponse<T>> GetAsync<T>(string endpointName, IAPIRequest parameters = null, IAPIConnectionInfo connectionInfo = null)
         {
-            var request = CreateRequest(endpointName, HttpMethod.Get, parameters);
-            return SendAsync<T>(request);
+            var request = CreateRequest(endpointName, HttpMethod.Get, parameters, connectionInfo);
+            return SendAsync<T>(request, connectionInfo);
         }
 
-        public Task<APIResponse<T>> PostAsync<T>(string endpointName, IAPIRequest parameters = null)
+        public Task<APIResponse<T>> PostAsync<T>(string endpointName, IAPIRequest parameters = null, IAPIConnectionInfo connectionInfo = null)
         {
-            var request = CreateRequest(endpointName, HttpMethod.Post, parameters);
-            return SendAsync<T>(request);
+            var request = CreateRequest(endpointName, HttpMethod.Post, parameters, connectionInfo);
+            return SendAsync<T>(request, connectionInfo);
         }
 
-        public Task<APIResponse<T>> PutAsync<T>(string endpointName, IAPIRequest parameters = null)
+        public Task<APIResponse<T>> PutAsync<T>(string endpointName, IAPIRequest parameters = null, IAPIConnectionInfo connectionInfo = null)
         {
-            var request = CreateRequest(endpointName, HttpMethod.Put, parameters);
-            return SendAsync<T>(request);
+            var request = CreateRequest(endpointName, HttpMethod.Put, parameters, connectionInfo);
+            return SendAsync<T>(request, connectionInfo);
         }
 
-        public Task<APIResponse<T>> DeleteAsync<T>(string endpointName, IAPIRequest parameters = null)
+        public Task<APIResponse<T>> DeleteAsync<T>(string endpointName, IAPIRequest parameters = null, IAPIConnectionInfo connectionInfo = null)
         {
-            var request = CreateRequest(endpointName, HttpMethod.Delete, parameters);
-            return SendAsync<T>(request);
+            var request = CreateRequest(endpointName, HttpMethod.Delete, parameters, connectionInfo);
+            return SendAsync<T>(request, connectionInfo);
         }
 
-        public async Task<APIResponse<T>> SendAsync<T>(IAPIRequest request)
+        public async Task<APIResponse<T>> SendAsync<T>(IAPIRequest request, IAPIConnectionInfo connectionInfo = null)
         {
             CheckDisposed();
 
             try
             {
-                var connectionInfo = _apiSetup.GetConnectionInfo();
+                if (connectionInfo == null)
+                {
+                    if (_apiSetup == null) throw new ArgumentNullException(nameof(_apiSetup));
+
+                    _apiSetup.GetConnectionInfo();
+                }
 
                 using (var cts = new CancellationTokenSource(request.TimeoutMilliseconds))
                 {
@@ -136,11 +145,17 @@ namespace APIClient.Client
             GC.SuppressFinalize(this);
         }
 
-        private IAPIRequest CreateRequest(string endpointName, HttpMethod method, IAPIRequest apiRequest)
+        private IAPIRequest CreateRequest(string endpointName, HttpMethod method, IAPIRequest apiRequest, IAPIConnectionInfo connectionInfo = null)
         {
             CheckDisposed();
 
-            var connectionInfo = _apiSetup.GetConnectionInfo();
+            if (connectionInfo == null)
+            {
+                if (_apiSetup == null) throw new ArgumentNullException(nameof(_apiSetup));
+
+                _apiSetup.GetConnectionInfo();
+            }
+
             var endpoint = connectionInfo.GetEndpoint(endpointName);
 
             var request = new APIRequest
