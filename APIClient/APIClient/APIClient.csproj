@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <Title>$(AssemblyName)</Title>
-    <Version>1.3.2-beta</Version>
+    <Version>1.3.2</Version>
     <Authors>Jay9011</Authors>
     <Company>SECUiDEA</Company>
     <Copyright>Jay9011</Copyright>
